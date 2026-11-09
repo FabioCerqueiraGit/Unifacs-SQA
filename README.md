@@ -50,3 +50,7 @@ A tabela de catálogo possui RLS e permite apenas leitura aos clientes. O fronte
 ## Navegação
 
 Eventos, Meus Ingressos e Contato usam fragmentos de URL. A agenda possui busca e filtros. Os formulários podem ser acessados pelo teclado e o layout se adapta a dispositivos móveis.
+
+## Documentação de software para os alunos
+
+Consulte a [documentação completa em `docs/`](docs/README.md), com objetivos, requisitos funcionais e não funcionais, regras de negócio, casos de uso, diagramas, arquitetura, modelo de dados e guia de testes com rastreabilidade.
