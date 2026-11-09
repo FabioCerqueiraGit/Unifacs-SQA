@@ -1,0 +1,51 @@
+name: Relato de teste
+description: Registre uma observação de qualidade com passos reproduzíveis.
+title: "[Teste] "
+body:
+  - type: input
+    id: scenario
+    attributes:
+      label: Cenário
+      description: Qual funcionalidade ou situação você testou?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Passos para reproduzir
+      placeholder: "1. Acesse...\n2. Preencha...\n3. Clique..."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Resultado esperado
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Resultado obtido
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidências
+      description: Inclua imagens, mensagens do console ou gravações. Remova qualquer dado pessoal real.
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severidade sugerida
+      options:
+        - Baixa
+        - Média
+        - Alta
+        - Crítica
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Ambiente
+      placeholder: Navegador, versão e dispositivo
