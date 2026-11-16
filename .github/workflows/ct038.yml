@@ -1,0 +1,95 @@
+name: CT038 — validação isolada do catálogo
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/lib/catalog.ts"
+      - "src/lib/events.ts"
+      - "src/lib/catalog.ct038.test.ts"
+      - "package.json"
+      - "package-lock.json"
+      - "vite.config.ts"
+      - ".github/workflows/ct038.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ct038-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Testes CT038, suíte, typecheck e build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Obter código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.12"
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Registrar ambiente
+        run: |
+          mkdir -p evidence/CT038
+          {
+            echo "CT038 — evidências automatizadas"
+            echo "Data UTC: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+            echo "Commit: $(git rev-parse HEAD)"
+            echo "Branch/ref: $GITHUB_REF"
+            echo "Runner: $RUNNER_OS"
+            echo "Node: $(node --version)"
+            echo "npm: $(npm --version)"
+          } | tee evidence/CT038/ambiente.txt
+
+      - name: Executar validações e preservar logs
+        shell: bash
+        run: |
+          set +e
+
+          npm test -- src/lib/catalog.ct038.test.ts --reporter=verbose 2>&1 | tee evidence/CT038/ct038.log
+          CT038_STATUS=${PIPESTATUS[0]}
+
+          npm test -- --reporter=verbose 2>&1 | tee evidence/CT038/suite-completa.log
+          SUITE_STATUS=${PIPESTATUS[0]}
+
+          npm run typecheck 2>&1 | tee evidence/CT038/typecheck.log
+          TYPECHECK_STATUS=${PIPESTATUS[0]}
+
+          npm run build 2>&1 | tee evidence/CT038/build.log
+          BUILD_STATUS=${PIPESTATUS[0]}
+
+          {
+            echo "# Resultado da execução CT038"
+            echo
+            echo "| Verificação | Exit code | Resultado |"
+            echo "|---|---:|---|"
+            echo "| Testes específicos CT038 | $CT038_STATUS | $([ "$CT038_STATUS" -eq 0 ] && echo PASSOU || echo FALHOU) |"
+            echo "| Suíte completa | $SUITE_STATUS | $([ "$SUITE_STATUS" -eq 0 ] && echo PASSOU || echo FALHOU) |"
+            echo "| Typecheck | $TYPECHECK_STATUS | $([ "$TYPECHECK_STATUS" -eq 0 ] && echo PASSOU || echo FALHOU) |"
+            echo "| Build | $BUILD_STATUS | $([ "$BUILD_STATUS" -eq 0 ] && echo PASSOU || echo FALHOU) |"
+            echo
+            echo "Os resultados acima são logs do runner GitHub Actions. Não representam captura de navegador real."
+          } | tee evidence/CT038/resumo.md
+
+          if [ "$CT038_STATUS" -ne 0 ] || [ "$SUITE_STATUS" -ne 0 ] || [ "$TYPECHECK_STATUS" -ne 0 ] || [ "$BUILD_STATUS" -ne 0 ]; then
+            exit 1
+          fi
+
+      - name: Publicar artefato de evidências
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CT038-evidencias-${{ github.run_id }}
+          path: evidence/CT038/
+          if-no-files-found: warn
+          retention-days: 30
